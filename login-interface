@@ -1,0 +1,190 @@
+#!/bin/bash
+
+# Setup script for login-interface project
+
+# Secure and private directory setup
+PROJECT_DIR="/data/data/com.termux/files/home/login-interface"
+mkdir -p $PROJECT_DIR
+cd $PROJECT_DIR
+
+# Ensure dependencies are installed
+echo "Checking dependencies..."
+
+# Install necessary packages
+pkg update && pkg upgrade -y
+pkg install -y git curl wget openssl bash
+
+# Function to encrypt sensitive files
+encrypt_files() {
+    echo "Encrypting sensitive files..."
+    openssl enc -aes-256-cbc -salt -in sensitive_data.txt -out sensitive_data.txt.enc -k "your_secret_key"
+}
+
+# Function to decrypt sensitive files
+decrypt_files() {
+    echo "Decrypting sensitive files..."
+    openssl enc -d -aes-256-cbc -in sensitive_data.txt.enc -out sensitive_data.txt -k "your_secret_key"
+}
+
+# Clone or update the GitHub repository
+git_clone_or_update() {
+    echo "Cloning or updating GitHub repository..."
+    if [ ! -d "$PROJECT_DIR/.git" ]; then
+        git clone https://github.com/yourusername/login-interface.git
+    else
+        cd $PROJECT_DIR
+        git pull origin main
+    fi
+}
+
+# Function to initialize the main menu options
+main_menu() {
+    clear
+    echo "====================================="
+    echo "      Welcome to Login-Interface"
+    echo "====================================="
+    echo "1. Project"
+    echo "2. Tools"
+    echo "3. Google Search"
+    echo "4. Exit"
+    echo "====================================="
+    echo -n "Select an option: "
+    read option
+    case $option in
+        1)
+            project_menu
+            ;;
+        2)
+            tools_menu
+            ;;
+        3)
+            google_search
+            ;;
+        4)
+            exit
+            ;;
+        *)
+            echo "Invalid option, try again."
+            main_menu
+            ;;
+    esac
+}
+
+# Project menu
+project_menu() {
+    clear
+    echo "====================================="
+    echo "            Project Options"
+    echo "====================================="
+    echo "1. Clone New Repository"
+    echo "2. View All Repositories"
+    echo "3. Return to Main Menu"
+    echo "====================================="
+    echo -n "Select an option: "
+    read option
+    case $option in
+        1)
+            clone_new_repository
+            ;;
+        2)
+            view_repositories
+            ;;
+        3)
+            main_menu
+            ;;
+        *)
+            echo "Invalid option, try again."
+            project_menu
+            ;;
+    esac
+}
+
+# Tools menu
+tools_menu() {
+    clear
+    echo "====================================="
+    echo "           Tools Options"
+    echo "====================================="
+    echo "1. Open All Repositories"
+    echo "2. Return to Main Menu"
+    echo "====================================="
+    echo -n "Select an option: "
+    read option
+    case $option in
+        1)
+            open_all_repositories
+            ;;
+        2)
+            main_menu
+            ;;
+        *)
+            echo "Invalid option, try again."
+            tools_menu
+            ;;
+    esac
+}
+
+# Google search menu
+google_search() {
+    clear
+    echo "====================================="
+    echo "            Google Search"
+    echo "====================================="
+    echo -n "Enter search query: "
+    read query
+    echo "Searching Google for: $query"
+    # Using the curl command to search
+    curl "https://www.google.com/search?q=$query"
+    main_menu
+}
+
+# Function to clone a new repository
+clone_new_repository() {
+    clear
+    echo "====================================="
+    echo "      Clone New Repository"
+    echo "====================================="
+    echo -n "Enter the GitHub repository URL: "
+    read repo_url
+    git clone $repo_url
+    echo "Repository cloned successfully!"
+    project_menu
+}
+
+# Function to view all repositories
+view_repositories() {
+    clear
+    echo "====================================="
+    echo "     View All Repositories"
+    echo "====================================="
+    # List all cloned repositories
+    ls -d */
+    project_menu
+}
+
+# Function to open all repositories in the tool section
+open_all_repositories() {
+    clear
+    echo "====================================="
+    echo "       Opening All Repositories"
+    echo "====================================="
+    for dir in */ ; do
+        echo "Opening $dir"
+        cd $dir
+        # Open or run the repository (can be customized based on project needs)
+        # Example: If it's a Python project, you could run it like this:
+        # python3 main.py
+        # Modify the command based on your repository types
+        cd ..
+    done
+    tools_menu
+}
+
+# Encrypt sensitive files during the installation/setup
+encrypt_files
+
+# Clone or update the GitHub repository if it exists
+git_clone_or_update
+
+# Start the main menu
+main_menu
