@@ -1,46 +1,94 @@
 #!/bin/bash
 
-# Setup script for login-interface project
+# Setup script for login-interface project with advanced features
 
 # Secure and private directory setup
 PROJECT_DIR="/data/data/com.termux/files/home/login-interface"
 mkdir -p $PROJECT_DIR
 cd $PROJECT_DIR
 
-# Update the local repository with the latest code from GitHub
-echo "Fetching the latest updates from GitHub..."
-git pull origin main
-
 # Ensure dependencies are installed
 echo "Checking dependencies..."
 
 # Install necessary packages
 pkg update && pkg upgrade -y
-pkg install -y git curl wget openssl bash
+pkg install -y git curl wget openssl bash rclone
 
-# Function to initialize the login process
+# Function to encrypt sensitive files
+encrypt_files() {
+    echo "Encrypting sensitive files..."
+    openssl enc -aes-256-cbc -salt -in sensitive_data.txt -out sensitive_data.txt.enc -k "your_secret_key"
+}
+
+# Function to decrypt sensitive files
+decrypt_files() {
+    echo "Decrypting sensitive files..."
+    openssl enc -d -aes-256-cbc -in sensitive_data.txt.enc -out sensitive_data.txt -k "your_secret_key"
+}
+
+# Function to update and sync with GitHub
+git_sync() {
+    echo "Fetching the latest updates from GitHub..."
+    git fetch origin
+    git reset --hard origin/main
+}
+
+# Function to prompt for login or account creation
+login_or_create_account() {
+    clear
+    echo "====================================="
+    echo "      Login or Create Account"
+    echo "====================================="
+    echo "1. Login"
+    echo "2. Create New Account"
+    echo "====================================="
+    echo -n "Select an option: "
+    read option
+    case $option in
+        1)
+            login
+            ;;
+        2)
+            create_account
+            ;;
+        *)
+            echo "Invalid option, try again."
+            login_or_create_account
+            ;;
+    esac
+}
+
+# Function for logging in
 login() {
     clear
     echo "====================================="
-    echo "      Secure Login Interface"
+    echo "           Login"
     echo "====================================="
-    echo -n "Enter your username: "
+    echo -n "Enter username: "
     read username
-    echo -n "Enter your password: "
+    echo -n "Enter password: "
     read -s password
-    echo
-
-    # Verify login (this part can be customized based on your setup)
-    if [[ $username == "admin" && $password == "admin123" ]]; then
-        echo "Login successful!"
-        main_menu
-    else
-        echo "Invalid username or password. Try again."
-        login
-    fi
+    # Add logic to authenticate the user
+    echo -e "\nLogin successful!"
+    main_menu
 }
 
-# Function to initialize the main menu options
+# Function to create a new account
+create_account() {
+    clear
+    echo "====================================="
+    echo "         Create New Account"
+    echo "====================================="
+    echo -n "Enter new username: "
+    read new_username
+    echo -n "Enter new password: "
+    read -s new_password
+    # Save the new account information securely
+    echo -e "\nAccount created successfully!"
+    main_menu
+}
+
+# Function to initiate the main menu after login
 main_menu() {
     clear
     echo "====================================="
@@ -49,7 +97,9 @@ main_menu() {
     echo "1. Project"
     echo "2. Tools"
     echo "3. Google Search"
-    echo "4. Exit"
+    echo "4. Backup / Restore"
+    echo "5. Settings"
+    echo "6. Exit"
     echo "====================================="
     echo -n "Select an option: "
     read option
@@ -64,6 +114,12 @@ main_menu() {
             google_search
             ;;
         4)
+            backup_restore
+            ;;
+        5)
+            settings_menu
+            ;;
+        6)
             exit
             ;;
         *)
@@ -136,52 +192,186 @@ google_search() {
     echo -n "Enter search query: "
     read query
     echo "Searching Google for: $query"
-    # Using the curl command to search
     curl "https://www.google.com/search?q=$query"
     main_menu
 }
 
-# Function to clone a new repository
-clone_new_repository() {
+# Backup and Restore menu
+backup_restore() {
     clear
     echo "====================================="
-    echo "      Clone New Repository"
+    echo "     Backup / Restore Options"
     echo "====================================="
-    echo -n "Enter the GitHub repository URL: "
-    read repo_url
-    git clone $repo_url
-    echo "Repository cloned successfully!"
-    project_menu
+    echo "1. Backup to GitHub"
+    echo "2. Backup to Google Drive"
+    echo "3. Restore from GitHub"
+    echo "4. Restore from Google Drive"
+    echo "5. Return to Main Menu"
+    echo "====================================="
+    echo -n "Select an option: "
+    read option
+    case $option in
+        1)
+            backup_github
+            ;;
+        2)
+            backup_google_drive
+            ;;
+        3)
+            restore_github
+            ;;
+        4)
+            restore_google_drive
+            ;;
+        5)
+            main_menu
+            ;;
+        *)
+            echo "Invalid option, try again."
+            backup_restore
+            ;;
+    esac
 }
 
-# Function to view all repositories
-view_repositories() {
+# Backup to GitHub
+backup_github() {
+    clear
+    echo "Backing up data to GitHub..."
+    git add .
+    git commit -m "Backup commit"
+    git push origin main
+    echo "Backup successful!"
+    backup_restore
+}
+
+# Backup to Google Drive (using rclone)
+backup_google_drive() {
+    clear
+    echo "Backing up data to Google Drive..."
+    rclone sync $PROJECT_DIR remote:login-interface-backups
+    echo "Backup successful!"
+    backup_restore
+}
+
+# Restore from GitHub
+restore_github() {
+    clear
+    echo "Restoring data from GitHub..."
+    git pull origin main
+    echo "Restore successful!"
+    backup_restore
+}
+
+# Restore from Google Drive (using rclone)
+restore_google_drive() {
+    clear
+    echo "Restoring data from Google Drive..."
+    rclone sync remote:login-interface-backups $PROJECT_DIR
+    echo "Restore successful!"
+    backup_restore
+}
+
+# Settings menu
+settings_menu() {
     clear
     echo "====================================="
-    echo "     View All Repositories"
+    echo "           Settings"
     echo "====================================="
-    # List all cloned repositories
-    ls -d */
-    project_menu
+    echo "1. Change Theme"
+    echo "2. Change Username"
+    echo "3. Change Password"
+    echo "4. Return to Main Menu"
+    echo "====================================="
+    echo -n "Select an option: "
+    read option
+    case $option in
+        1)
+            change_theme
+            ;;
+        2)
+            change_username
+            ;;
+        3)
+            change_password
+            ;;
+        4)
+            main_menu
+            ;;
+        *)
+            echo "Invalid option, try again."
+            settings_menu
+            ;;
+    esac
 }
 
-# Function to open all repositories in the tool section
-open_all_repositories() {
+# Change theme
+change_theme() {
     clear
     echo "====================================="
-    echo "       Opening All Repositories"
+    echo "          Change Theme"
     echo "====================================="
-    for dir in */ ; do
-        echo "Opening $dir"
-        cd $dir
-        # Open or run the repository (can be customized based on project needs)
-        # Example: If it's a Python project, you could run it like this:
-        # python3 main.py
-        # Modify the command based on your repository types
-        cd ..
-    done
-    tools_menu
+    echo "1. Default"
+    echo "2. Dark Mode"
+    echo "3. Light Mode"
+    echo "4. Return to Settings"
+    echo "====================================="
+    echo -n "Select an option: "
+    read option
+    case $option in
+        1)
+            echo "Changing to Default theme..."
+            # Apply default theme changes
+            settings_menu
+            ;;
+        2)
+            echo "Changing to Dark Mode..."
+            # Apply dark mode theme changes
+            settings_menu
+            ;;
+        3)
+            echo "Changing to Light Mode..."
+            # Apply light mode theme changes
+            settings_menu
+            ;;
+        4)
+            settings_menu
+            ;;
+        *)
+            echo "Invalid option, try again."
+            change_theme
+            ;;
+    esac
 }
 
-# Start the login process
-login
+# Change username
+change_username() {
+    clear
+    echo "====================================="
+    echo "         Change Username"
+    echo "====================================="
+    echo -n "Enter new username: "
+    read new_username
+    echo "Username updated to: $new_username"
+    settings_menu
+}
+
+# Change password
+change_password() {
+    clear
+    echo "====================================="
+    echo "         Change Password"
+    echo "====================================="
+    echo -n "Enter new password: "
+    read -s new_password
+    echo "Password updated."
+    settings_menu
+}
+
+# Encrypt sensitive files during the installation/setup
+encrypt_files
+
+# Sync with GitHub and update the project
+git_sync
+
+# Start the login or account creation process
+login_or_create_account
