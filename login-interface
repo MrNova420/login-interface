@@ -7,6 +7,10 @@ PROJECT_DIR="/data/data/com.termux/files/home/login-interface"
 mkdir -p $PROJECT_DIR
 cd $PROJECT_DIR
 
+# Update the local repository with the latest code from GitHub
+echo "Fetching the latest updates from GitHub..."
+git pull origin main
+
 # Ensure dependencies are installed
 echo "Checking dependencies..."
 
@@ -14,26 +18,25 @@ echo "Checking dependencies..."
 pkg update && pkg upgrade -y
 pkg install -y git curl wget openssl bash
 
-# Function to encrypt sensitive files
-encrypt_files() {
-    echo "Encrypting sensitive files..."
-    openssl enc -aes-256-cbc -salt -in sensitive_data.txt -out sensitive_data.txt.enc -k "your_secret_key"
-}
+# Function to initialize the login process
+login() {
+    clear
+    echo "====================================="
+    echo "      Secure Login Interface"
+    echo "====================================="
+    echo -n "Enter your username: "
+    read username
+    echo -n "Enter your password: "
+    read -s password
+    echo
 
-# Function to decrypt sensitive files
-decrypt_files() {
-    echo "Decrypting sensitive files..."
-    openssl enc -d -aes-256-cbc -in sensitive_data.txt.enc -out sensitive_data.txt -k "your_secret_key"
-}
-
-# Clone or update the GitHub repository
-git_clone_or_update() {
-    echo "Cloning or updating GitHub repository..."
-    if [ ! -d "$PROJECT_DIR/.git" ]; then
-        git clone https://github.com/yourusername/login-interface.git
+    # Verify login (this part can be customized based on your setup)
+    if [[ $username == "admin" && $password == "admin123" ]]; then
+        echo "Login successful!"
+        main_menu
     else
-        cd $PROJECT_DIR
-        git pull origin main
+        echo "Invalid username or password. Try again."
+        login
     fi
 }
 
@@ -180,11 +183,5 @@ open_all_repositories() {
     tools_menu
 }
 
-# Encrypt sensitive files during the installation/setup
-encrypt_files
-
-# Clone or update the GitHub repository if it exists
-git_clone_or_update
-
-# Start the main menu
-main_menu
+# Start the login process
+login
