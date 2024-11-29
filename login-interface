@@ -1,17 +1,42 @@
 #!/bin/bash
 
-# Setup script for login-interface project with improved user experience
+# Setup script for login-interface project with AI assistant and GitHub integration
 
-# Define the project directory
+# Define the project directory and AI assistant directory
 PROJECT_DIR="/data/data/com.termux/files/home/login-interface"
+AI_ASSISTANT_DIR="$PROJECT_DIR/ai-assistant"
+AI_REPO="https://github.com/your-repo/ai-assistant.git" # Replace with your GitHub repo URL
 mkdir -p $PROJECT_DIR
+mkdir -p $AI_ASSISTANT_DIR
 cd $PROJECT_DIR
 
 # Function to check if required dependencies are installed
 check_dependencies() {
     echo "Checking if all dependencies are installed..."
     pkg update && pkg upgrade -y
-    pkg install -y git curl wget openssl bash rclone
+    pkg install -y git curl wget openssl bash python
+    pip install --upgrade pip
+    pip install openai rich transformers torch
+}
+
+# Function to set up AI Chat Assistant
+setup_ai_assistant() {
+    echo "Setting up AI Chat Assistant..."
+    if [ -d "$AI_ASSISTANT_DIR/.git" ]; then
+        echo "Updating AI assistant from GitHub..."
+        cd $AI_ASSISTANT_DIR
+        git pull origin main
+    else
+        echo "Cloning AI assistant from GitHub..."
+        git clone $AI_REPO $AI_ASSISTANT_DIR
+    fi
+    echo "AI Chat Assistant setup completed."
+}
+
+# Function to launch AI Chat Assistant
+launch_ai_assistant() {
+    username=$(whoami)
+    python3 $AI_ASSISTANT_DIR/ai_chat.py $username
 }
 
 # Function to encrypt sensitive files
@@ -62,7 +87,7 @@ login() {
     echo
     # Simulate login validation (you can add actual validation logic here)
     echo "Login successful! Welcome, $username."
-    main_menu
+    main_menu $username
 }
 
 # Account creation function
@@ -76,11 +101,12 @@ create_account() {
     echo
     # Simulate account creation (you can add saving to a database or file here)
     echo "Account successfully created! Welcome, $new_username."
-    main_menu
+    main_menu $new_username
 }
 
 # Main menu with options after login
 main_menu() {
+    local username=$1
     clear
     echo "====================================="
     echo "      Main Menu - Choose an option"
@@ -89,7 +115,7 @@ main_menu() {
     echo "2. Tools"
     echo "3. Google Search"
     echo "4. Backup / Restore"
-    echo "5. Settings"
+    echo "5. AI Chat Assistant"
     echo "6. Exit"
     echo "====================================="
     read -p "Enter your choice (1-6): " choice
@@ -98,13 +124,13 @@ main_menu() {
         2) tools_menu ;;
         3) google_search ;;
         4) backup_restore ;;
-        5) settings_menu ;;
+        5) launch_ai_assistant ;;
         6) exit ;;
-        *) echo "Invalid choice. Please try again." && main_menu ;;
+        *) echo "Invalid choice. Please try again." && main_menu $username ;;
     esac
 }
 
-# Project menu
+# Project management menu
 project_menu() {
     clear
     echo "====================================="
@@ -213,76 +239,7 @@ restore_google_drive() {
     backup_restore
 }
 
-# Settings menu
-settings_menu() {
-    clear
-    echo "====================================="
-    echo "             Settings"
-    echo "====================================="
-    echo "1. Change Theme"
-    echo "2. Change Username"
-    echo "3. Change Password"
-    echo "4. Return to Main Menu"
-    echo "====================================="
-    read -p "Enter your choice (1-4): " choice
-    case $choice in
-        1) change_theme ;;
-        2) change_username ;;
-        3) change_password ;;
-        4) main_menu ;;
-        *) echo "Invalid choice. Please try again." && settings_menu ;;
-    esac
-}
-
-# Change theme
-change_theme() {
-    clear
-    echo "====================================="
-    echo "          Change Theme"
-    echo "====================================="
-    echo "1. Default"
-    echo "2. Dark Mode"
-    echo "3. Light Mode"
-    echo "4. Return to Settings"
-    echo "====================================="
-    read -p "Enter your choice (1-4): " choice
-    case $choice in
-        1) echo "Changing to Default theme..." ;;
-        2) echo "Changing to Dark Mode..." ;;
-        3) echo "Changing to Light Mode..." ;;
-        4) settings_menu ;;
-        *) echo "Invalid choice. Please try again." && change_theme ;;
-    esac
-}
-
-# Change username
-change_username() {
-    clear
-    echo "====================================="
-    echo "         Change Username"
-    echo "====================================="
-    read -p "Enter a new username: " new_username
-    echo "Username updated to: $new_username"
-    settings_menu
-}
-
-# Change password
-change_password() {
-    clear
-    echo "====================================="
-    echo "         Change Password"
-    echo "====================================="
-    read -s -p "Enter a new password: " new_password
-    echo
-    echo "Password updated."
-    settings_menu
-}
-
-# Encrypt sensitive files
-encrypt_files
-
-# Sync with GitHub
-git_sync
-
-# Start the login or account creation process
+# Initial setup
+check_dependencies
+setup_ai_assistant
 login_or_create_account
